@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08080a">
+<title>Lei ou lenda? · Liderança em Foco · Grupo Amapá</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&display=swap">
+<style>
+  :root { --bg:#08080a; --fg:#ffffff; --muted:#b4b4b4; --line:#2c2c2e; --rosa:#FF0066; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--fg); font-family:'Montserrat','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  body { min-height:100dvh; display:flex; flex-direction:column; padding:max(20px, env(safe-area-inset-top)) 22px max(18px, env(safe-area-inset-bottom)); }
+  .topo { font-size:11px; letter-spacing:.18em; font-weight:500; color:var(--muted); }
+  h1 { margin:14px 0 0; font-size:44px; line-height:.95; font-weight:600; letter-spacing:-.035em; }
+  h1 .leve { font-weight:200; }
+  h1 .ponto { color:var(--rosa); }
+  main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px; padding:28px 0; }
+  .rotulo { font-size:12px; letter-spacing:.16em; font-weight:500; color:var(--muted); }
+  .afirmacao { margin:0; font-size:27px; line-height:1.22; font-weight:300; letter-spacing:-.01em; }
+  .botoes { display:flex; flex-direction:column; gap:12px; }
+  button.voto { font-family:inherit; font-size:22px; font-weight:600; letter-spacing:.14em; padding:22px 0; border-radius:999px; border:2px solid var(--fg); background:transparent; color:var(--fg); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background-color .15s, color .15s, border-color .15s; }
+  button.voto.escolhido { background:var(--fg); color:var(--bg); }
+  button.voto:disabled { opacity:.35; }
+  button.voto:active { transform:scale(.985); }
+  .aviso { font-size:15px; line-height:1.45; color:#eaeaea; min-height:22px; }
+  .veredito { font-size:64px; line-height:1; font-weight:600; letter-spacing:-.04em; }
+  .veredito .e { font-weight:200; }
+  .veredito .ponto { color:var(--rosa); }
+  .acerto { font-size:17px; font-weight:500; }
+  .norma { margin:0; font-size:18px; line-height:1.45; font-weight:400; color:#eaeaea; border-top:1px solid var(--line); padding-top:16px; }
+  .base { font-size:13px; letter-spacing:.06em; color:var(--muted); }
+  .espera { font-size:21px; line-height:1.4; font-weight:300; color:#eaeaea; }
+  .pulso { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--rosa); margin-right:10px; animation:pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 0%,100% { opacity:.25 } 50% { opacity:1 } }
+  @media (prefers-reduced-motion: reduce) { .pulso { animation:none; opacity:1 } }
+  footer { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.14em; color:var(--muted); font-weight:500; }
+  footer .ponto { color:var(--rosa); }
+  .erro { color:#ffb3cf; font-size:14px; }
+</style>
+</head>
+<body>
+<div class="topo">LIDERANÇA EM FOCO · GRUPO AMAPÁ</div>
+<h1>Lei <span class="leve">ou</span> lenda<span class="ponto">?</span></h1>
+<main id="tela" aria-live="polite"><p class="espera"><span class="pulso" aria-hidden="true"></span>Conectando…</p></main>
+<footer><span>GROSSI<span class="ponto">•</span>LAW</span><span>SEM CADASTRO E SEM IDENTIFICAÇÃO</span></footer>
+
+<script>
+(function () {
+  var BASE = 'https://dcbezwnlwcngrrsbssld.supabase.co/functions/v1/amapa';
+  var CHAVE_DISP = 'll_amapa_disp';
+  var CHAVE_VOTOS = 'll_amapa_votos';
+  var tela = document.getElementById('tela');
+
+  function aleatorio() {
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 12);
+  }
+  var disp = localStorage.getItem(CHAVE_DISP);
+  if (!disp) { disp = aleatorio(); localStorage.setItem(CHAVE_DISP, disp); }
+  var votos = {};
+  try { votos = JSON.parse(localStorage.getItem(CHAVE_VOTOS) || '{}') || {}; } catch (e) { votos = {}; }
+  function meuVoto(r, n) { return votos[r + ':' + n] || null; }
+  function guardarVoto(r, n, v) { votos[r + ':' + n] = v; localStorage.setItem(CHAVE_VOTOS, JSON.stringify(votos)); }
+
+  var estado = null, assinatura = '', enviando = false, msg = '';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function desenhar() {
+    var e = estado;
+    if (!e) return;
+    if (e.fase === 'espera') {
+      tela.innerHTML = '<p class="espera"><span class="pulso" aria-hidden="true"></span>Você está na sala. A primeira afirmação aparece aqui assim que ela for para a tela.</p>' +
+        '<p class="aviso">Deixe esta página aberta. Ela muda sozinha.</p>';
+      return;
+    }
+    if (e.fase === 'fim') {
+      tela.innerHTML = '<p class="espera">Fim da votação. Obrigado por participar.</p>' +
+        '<p class="aviso">O resultado da sala está na tela.</p>';
+      return;
+    }
+    var v = meuVoto(e.rodada, e.atual);
+    var h = '<div class="rotulo">AFIRMAÇÃO ' + e.atual + ' DE ' + e.total + '</div>' +
+      '<p class="afirmacao">' + esc(e.texto) + '</p>';
+    if (!e.revelado) {
+      h += '<div class="botoes">' +
+        '<button type="button" class="voto' + (v === 'lei' ? ' escolhido' : '') + '" data-v="lei" aria-pressed="' + (v === 'lei') + '"' + (enviando ? ' disabled' : '') + '>LEI</button>' +
+        '<button type="button" class="voto' + (v === 'lenda' ? ' escolhido' : '') + '" data-v="lenda" aria-pressed="' + (v === 'lenda') + '"' + (enviando ? ' disabled' : '') + '>LENDA</button>' +
+        '</div>' +
+        '<div class="aviso">' + (msg ? '<span class="erro">' + esc(msg) + '</span>' : v ? 'Voto registrado. Dá para mudar até a resposta aparecer na tela.' : 'Toque na sua resposta.') + '</div>';
+    } else {
+      var certo = v && v === e.resposta;
+      h += '<div class="veredito"><span class="e">É </span>' + (e.resposta === 'lei' ? 'lei' : 'lenda') + '<span class="ponto">.</span></div>' +
+        '<div class="acerto">' + (v ? (certo ? 'Você acertou.' : 'Você votou ' + v + '.') : 'Você não votou nesta.') + '</div>' +
+        '<p class="norma">' + esc(e.norma) + '</p>' +
+        '<div class="base">' + esc(e.base) + '</div>';
+    }
+    tela.innerHTML = h;
+  }
+
+  tela.addEventListener('click', function (ev) {
+    var b = ev.target.closest('button.voto');
+    if (!b || !estado || estado.revelado || enviando) return;
+    var v = b.getAttribute('data-v');
+    var r = estado.rodada, n = estado.atual;
+    enviando = true; msg = '';
+    var anterior = meuVoto(r, n);
+    guardarVoto(r, n, v);
+    desenhar();
+    fetch(BASE + '/api/voto', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dispositivo: disp, rodada: r, n: n, voto: v })
+    }).then(function (res) {
+      return res.json().then(function (j) { return { ok: res.ok, j: j }; });
+    }).then(function (x) {
+      if (!x.ok) {
+        if (anterior) guardarVoto(r, n, anterior); else { delete votos[r + ':' + n]; localStorage.setItem(CHAVE_VOTOS, JSON.stringify(votos)); }
+        msg = x.j && x.j.erro ? x.j.erro.charAt(0).toUpperCase() + x.j.erro.slice(1) + '.' : 'Não foi possível registrar.';
+        if (x.j && x.j.estado) estado = x.j.estado;
+      }
+    }).catch(function () {
+      if (anterior) guardarVoto(r, n, anterior); else { delete votos[r + ':' + n]; localStorage.setItem(CHAVE_VOTOS, JSON.stringify(votos)); }
+      msg = 'Sem conexão. Toque de novo.';
+    }).then(function () { enviando = false; desenhar(); });
+  });
+
+  var timer = null;
+  function buscar() {
+    clearTimeout(timer);
+    fetch(BASE + '/api/estado', { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (e) {
+      var nova = [e.rodada, e.atual, e.revelado].join('|');
+      if (nova !== assinatura) { msg = ''; assinatura = nova; }
+      estado = e;
+      if (!enviando) desenhar();
+    }).catch(function () {}).then(function () {
+      timer = setTimeout(buscar, document.hidden ? 8000 : 2500);
+    });
+  }
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) buscar(); });
+  buscar();
+})();
+</script>
+</body>
+</html>

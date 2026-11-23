@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Painel · Lei ou lenda? · Grupo Amapá</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&display=swap">
+<style>
+  :root { --escuro:#08080a; --claro:#ffffff; --tinta:#111111; --cinza:#5f5f5f; --muted:#d6d6d6; --linha:#2c2c2e; --rosa:#FF0066; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:#000; overflow:hidden; font-family:'Montserrat','Helvetica Neue',Arial,sans-serif; -webkit-font-smoothing:antialiased; }
+  #palco { position:absolute; top:50%; left:50%; width:1280px; height:720px; transform-origin:center; overflow:hidden; }
+  .tela { position:absolute; inset:0; padding:52px 80px 38px; display:flex; flex-direction:column; justify-content:space-between; }
+  .escura { background:var(--escuro); color:var(--claro); }
+  .clara { background:var(--claro); color:var(--tinta); }
+  .faixa { display:flex; justify-content:space-between; align-items:flex-start; font-size:14px; letter-spacing:.18em; font-weight:500; }
+  .escura .faixa, .escura .rodape { color:var(--muted); }
+  .clara .faixa, .clara .rodape { color:var(--cinza); }
+  .rodape { display:flex; justify-content:space-between; align-items:center; font-size:13px; letter-spacing:.14em; font-weight:500; }
+  .ponto { color:var(--rosa); }
+  .qr { background:#fff; padding:14px; display:block; }
+  .qr img { display:block; width:100%; height:100%; image-rendering:pixelated; }
+  .url { font-size:15px; letter-spacing:.04em; text-align:center; }
+
+  /* espera */
+  .titulo-gigante { margin:0; font-size:150px; line-height:.9; font-weight:600; letter-spacing:-.04em; }
+  .titulo-gigante .leve { font-weight:200; }
+  .sub { margin:0; font-size:24px; font-weight:300; color:#eaeaea; max-width:600px; line-height:1.38; }
+
+  /* votação */
+  .afirmacao { margin:0; font-size:58px; line-height:1.1; font-weight:300; letter-spacing:-.02em; max-width:800px; }
+  .contador { display:flex; align-items:center; gap:14px; font-size:22px; font-weight:400; }
+  .contador b { font-size:44px; font-weight:200; letter-spacing:-.03em; }
+  .pulso { width:12px; height:12px; border-radius:50%; background:var(--rosa); animation:pulso 1.6s ease-in-out infinite; }
+  @keyframes pulso { 0%,100% { opacity:.25 } 50% { opacity:1 } }
+
+  /* revelação */
+  .afirmacao-menor { margin:0; font-size:30px; line-height:1.2; font-weight:300; letter-spacing:-.01em; max-width:1100px; }
+  .veredito { font-size:120px; line-height:.9; font-weight:600; letter-spacing:-.045em; }
+  .veredito .e { font-weight:200; }
+  .barras { display:flex; flex-direction:column; gap:14px; width:520px; }
+  .barra { display:grid; grid-template-columns:120px 1fr 90px; align-items:center; gap:16px; }
+  .barra .nome { font-size:20px; font-weight:600; letter-spacing:.12em; }
+  .barra .trilho { height:34px; background:#ececec; position:relative; }
+  .barra .cheio { position:absolute; inset:0 auto 0 0; background:#9a9a9a; transition:width .8s cubic-bezier(.2,.7,.2,1); }
+  .barra.certa .cheio { background:var(--rosa); }
+  .barra .pct { font-size:30px; font-weight:200; text-align:right; letter-spacing:-.02em; }
+  .norma { margin:0; font-size:22px; line-height:1.42; font-weight:400; color:#333; max-width:640px; }
+  .base { font-size:14px; letter-spacing:.08em; color:var(--cinza); font-weight:500; }
+
+  /* fim */
+  .resumo { display:flex; flex-direction:column; border-top:1px solid rgba(255,255,255,.6); }
+  .linha { display:grid; grid-template-columns:44px 1fr 110px 200px; column-gap:24px; align-items:center; padding:11px 0; border-bottom:1px solid var(--linha); }
+  .linha .n { font-size:34px; font-weight:200; color:var(--rosa); }
+  .linha .t { font-size:18px; line-height:1.3; font-weight:400; color:#f2f2f2; }
+  .linha .r { font-size:15px; font-weight:600; letter-spacing:.14em; }
+  .linha .a { display:flex; align-items:center; gap:12px; }
+  .linha .a .mini { flex:1; height:10px; background:#2c2c2e; position:relative; }
+  .linha .a .mini i { position:absolute; inset:0 auto 0 0; background:var(--claro); }
+  .linha .a span { font-size:20px; font-weight:300; width:56px; text-align:right; }
+
+  /* controles do palestrante */
+  #ctl { position:fixed; right:18px; bottom:18px; display:flex; gap:8px; align-items:center; background:rgba(20,20,22,.92); border:1px solid #333; border-radius:999px; padding:6px; font-family:inherit; transition:opacity .3s; z-index:10; }
+  #ctl.oculto { opacity:0; pointer-events:none; }
+  #ctl button { font-family:inherit; font-size:13px; font-weight:600; letter-spacing:.06em; color:#fff; background:transparent; border:1px solid #444; border-radius:999px; padding:9px 14px; cursor:pointer; }
+  #ctl button.prim { background:var(--rosa); border-color:var(--rosa); }
+  #ctl button:hover { border-color:#888; }
+  #ctl .st { color:#aaa; font-size:12px; padding:0 8px; letter-spacing:.04em; }
+  #menu { position:fixed; right:18px; bottom:72px; background:#141416; border:1px solid #333; border-radius:12px; padding:8px; display:none; flex-direction:column; min-width:260px; z-index:11; }
+  #menu.aberto { display:flex; }
+  #menu button, #menu a { font-family:inherit; text-align:left; font-size:13px; color:#eee; background:transparent; border:0; padding:10px 12px; border-radius:8px; cursor:pointer; text-decoration:none; }
+  #menu button:hover, #menu a:hover { background:#222; }
+  #menu .dica { font-size:11px; color:#888; padding:8px 12px 4px; line-height:1.4; }
+  #leitura { position:fixed; left:14px; bottom:12px; font-size:11px; color:#666; letter-spacing:.08em; }
+</style>
+</head>
+<body>
+<div id="palco" aria-live="polite"></div>
+<div id="ctl" hidden>
+  <button type="button" id="b-ant" title="Voltar (←)">◀</button>
+  <button type="button" id="b-av" class="prim" title="Avançar (→ ou espaço)">Avançar</button>
+  <span class="st" id="st"></span>
+  <button type="button" id="b-menu" title="Mais">⋯</button>
+</div>
+<div id="menu" role="menu">
+  <button type="button" data-acao="nova-rodada">Nova turma (zera a tela, guarda os votos)</button>
+  <button type="button" data-acao="reabrir">Reabrir a votação desta afirmação</button>
+  <button type="button" data-acao="semear">Inserir 25 votos de teste</button>
+  <button type="button" data-acao="zerar-demo">Apagar os votos de teste</button>
+  <a id="csv" href="#" target="_blank" rel="noopener">Baixar resultados (CSV)</a>
+  <div class="dica">Teclado e passador: → ou espaço revela e depois avança; ← volta. F para tela cheia.</div>
+</div>
+<div id="leitura" hidden>MODO LEITURA</div>
+
+<script>
+(function () {
+  var BASE = 'https://dcbezwnlwcngrrsbssld.supabase.co/functions/v1/amapa';
+  var SITE = 'bmgrossi.github.io/amapa';
+  var palco = document.getElementById('palco');
+
+  // escala o palco 1280×720 para a janela
+  function ajustar() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    palco.style.transform = 'translate(-50%,-50%) scale(' + s + ')';
+  }
+  window.addEventListener('resize', ajustar); ajustar();
+
+  // chave do palestrante: chega pela URL uma vez e fica guardada neste navegador
+  var q = new URLSearchParams(location.search);
+  if (q.get('chave')) { localStorage.setItem('ll_amapa_chave', q.get('chave')); history.replaceState(null, '', location.pathname); }
+  var chave = localStorage.getItem('ll_amapa_chave') || '';
+
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  var rodape = function (cls) {
+    return '<div class="rodape"><div>GROSSI<span class="ponto">•</span>LAW</div><div>LIDERANÇA EM FOCO · GRUPO AMAPÁ</div></div>';
+  };
+  var faixa = function (dir) {
+    return '<div class="faixa"><div>PARTE 3 DE 4 · FAZER CUMPRIR · LEI OU LENDA</div><div>' + (dir || '') + '</div></div>';
+  };
+
+  var estado = null, chaveTela = '';
+
+  function telaEspera() {
+    return '<div class="tela escura">' + faixa('') +
+      '<div style="display:flex;justify-content:space-between;align-items:flex-end;gap:60px">' +
+        '<div style="display:flex;flex-direction:column;gap:22px">' +
+          '<h1 class="titulo-gigante">Lei <span class="leve">ou</span><br>lenda<span class="ponto">?</span></h1>' +
+          '<p class="sub">Aponte a câmera do celular para o código e deixe a página aberta. As afirmações aparecem lá, uma de cada vez.</p>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:12px;align-items:center">' +
+          '<div class="qr" style="width:290px;height:290px"><img src="../qr.svg" alt="Código QR para ' + SITE + '"></div>' +
+          '<div class="url" style="color:#eaeaea">' + SITE + '</div>' +
+          '<div class="url" style="color:#b4b4b4;font-size:14px">Sem cadastro e sem identificação</div>' +
+        '</div>' +
+      '</div>' + rodape() + '</div>';
+  }
+
+  function telaVotacao(e) {
+    var n = e.votos ? e.votos.lei + e.votos.lenda : 0;
+    return '<div class="tela clara">' + faixa('AFIRMAÇÃO ' + e.atual + ' DE ' + e.total) +
+      '<div style="display:flex;gap:64px;align-items:center">' +
+        '<div style="flex:1;display:flex;flex-direction:column;gap:40px">' +
+          '<h2 class="afirmacao">' + esc(e.texto) + '</h2>' +
+          '<div class="contador"><span class="pulso" aria-hidden="true"></span><b id="nvotos">' + n + '</b><span>' + (n === 1 ? 'voto' : 'votos') + ' até agora</span></div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:14px;align-items:center;width:250px">' +
+          '<div class="qr" style="width:220px;height:220px;border:1px solid #ddd"><img src="../qr.svg" alt="Código QR para ' + SITE + '"></div>' +
+          '<div class="url" style="color:#333">' + SITE + '</div>' +
+        '</div>' +
+      '</div>' + rodape() + '</div>';
+  }
+
+  function telaRevelacao(e) {
+    var v = e.votos || { lei: 0, lenda: 0 };
+    var tot = v.lei + v.lenda;
+    var p = function (x) { return tot ? Math.round(100 * x / tot) : 0; };
+    var barra = function (nome, chaveV) {
+      return '<div class="barra' + (e.resposta === chaveV ? ' certa' : '') + '"><div class="nome">' + nome + '</div>' +
+        '<div class="trilho"><div class="cheio" style="width:0%" data-w="' + p(v[chaveV]) + '"></div></div>' +
+        '<div class="pct">' + p(v[chaveV]) + '%</div></div>';
+    };
+    return '<div class="tela clara">' + faixa('AFIRMAÇÃO ' + e.atual + ' DE ' + e.total) +
+      '<h2 class="afirmacao-menor">' + esc(e.texto) + '</h2>' +
+      '<div style="display:flex;gap:70px;align-items:flex-end">' +
+        '<div style="display:flex;flex-direction:column;gap:22px;flex:1">' +
+          '<div class="veredito"><span class="e">É </span>' + (e.resposta === 'lei' ? 'lei' : 'lenda') + '<span class="ponto">.</span></div>' +
+          '<p class="norma">' + esc(e.norma) + '</p>' +
+          '<div class="base">' + esc(e.base) + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:16px">' +
+          '<div class="base">A SALA VOTOU · ' + tot + (tot === 1 ? ' VOTO' : ' VOTOS') + '</div>' +
+          '<div class="barras">' + barra('LEI', 'lei') + barra('LENDA', 'lenda') + '</div>' +
+        '</div>' +
+      '</div>' + rodape() + '</div>';
+  }
+
+  function telaFim(e) {
+    var linhas = (e.resumo || []).map(function (r) {
+      var tot = r.lei + r.lenda;
+      var pct = tot ? Math.round(100 * r[r.resposta] / tot) : 0;
+      return '<div class="linha"><div class="n">' + r.n + '</div><div class="t">' + esc(r.texto) + '</div>' +
+        '<div class="r">' + (r.resposta === 'lei' ? 'LEI' : 'LENDA') + '</div>' +
+        '<div class="a"><div class="mini"><i style="width:' + pct + '%"></i></div><span>' + (tot ? pct + '%' : '–') + '</span></div></div>';
+    }).join('');
+    return '<div class="tela escura">' +
+      '<div style="display:flex;flex-direction:column;gap:14px"><div class="faixa"><div>LEI OU LENDA · O RESULTADO DA SALA</div><div>ACERTOS</div></div>' +
+      '<h2 style="margin:0;font-size:40px;line-height:1.12;font-weight:600;letter-spacing:-.015em">O que a sala acertou.</h2></div>' +
+      '<div class="resumo">' + linhas + '</div>' + rodape() + '</div>';
+  }
+
+  function desenhar(e) {
+    var k = [e.rodada, e.atual, e.revelado, e.fase].join('|');
+    if (k === chaveTela) {
+      // mesma tela: só atualiza os números
+      var nv = document.getElementById('nvotos');
+      if (nv && e.votos) {
+        var n = e.votos.lei + e.votos.lenda;
+        nv.textContent = n;
+        nv.nextElementSibling.textContent = (n === 1 ? 'voto' : 'votos') + ' até agora';
+      }
+      return;
+    }
+    chaveTela = k;
+    palco.innerHTML = e.fase === 'espera' ? telaEspera() : e.fase === 'fim' ? telaFim(e) : e.revelado ? telaRevelacao(e) : telaVotacao(e);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        palco.querySelectorAll('.cheio[data-w]').forEach(function (el) { el.style.width = el.getAttribute('data-w') + '%'; });
+      });
+    });
+    var st = document.getElementById('st');
+    if (st) st.textContent = e.fase === 'espera' ? 'abertura · turma ' + e.rodada : e.fase === 'fim' ? 'resultado · turma ' + e.rodada : e.atual + '/' + e.total + (e.revelado ? ' revelada' : ' votando') + ' · turma ' + e.rodada;
+  }
+
+  var timer = null;
+  function buscar() {
+    clearTimeout(timer);
+    fetch(BASE + '/api/painel', { cache: 'no-store' }).then(function (r) { return r.json(); })
+      .then(function (e) { if (e && e.fase) { estado = e; desenhar(e); } })
+      .catch(function () {})
+      .then(function () { timer = setTimeout(buscar, 1500); });
+  }
+
+  function admin(acao, extra) {
+    var corpo = Object.assign({ chave: chave, acao: acao }, extra || {});
+    return fetch(BASE + '/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corpo) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.erro || 'falhou'); return j; }); })
+      .then(function () { buscar(); })
+      .catch(function (err) { alert('Não foi possível: ' + err.message); });
+  }
+
+  function avancar() {
+    if (!estado) return;
+    if (estado.fase === 'votacao' && !estado.revelado) return admin('revelar');
+    if (estado.fase === 'fim') return;
+    admin('ir', { n: estado.atual + 1 });
+  }
+  function voltar() {
+    if (!estado) return;
+    if (estado.fase === 'votacao' && estado.revelado) return admin('reabrir');
+    if (estado.atual <= 0) return;
+    admin('ir', { n: estado.atual - 1 });
+  }
+
+  function ligarControles() {
+    var ctl = document.getElementById('ctl'), menu = document.getElementById('menu');
+    ctl.hidden = false;
+    document.getElementById('csv').href = BASE + '/api/export?chave=' + encodeURIComponent(chave);
+    document.getElementById('b-av').onclick = avancar;
+    document.getElementById('b-ant').onclick = voltar;
+    document.getElementById('b-menu').onclick = function () { menu.classList.toggle('aberto'); };
+    menu.addEventListener('click', function (ev) {
+      var b = ev.target.closest('button[data-acao]');
+      if (!b) return;
+      var a = b.getAttribute('data-acao');
+      if (a === 'nova-rodada' && !confirm('Começar uma nova turma? A tela volta para a abertura. Os votos da turma atual continuam guardados no CSV.')) return;
+      menu.classList.remove('aberto');
+      admin(a);
+    });
+    document.addEventListener('keydown', function (ev) {
+      if (ev.target.closest && ev.target.closest('input,textarea')) return;
+      if (['ArrowRight', 'PageDown', ' ', 'Enter'].indexOf(ev.key) >= 0) { ev.preventDefault(); avancar(); }
+      else if (['ArrowLeft', 'PageUp', 'Backspace'].indexOf(ev.key) >= 0) { ev.preventDefault(); voltar(); }
+      else if (ev.key === 'f' || ev.key === 'F') {
+        if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen().catch(function () {});
+      }
+    });
+    var t = null;
+    function mostrar() { ctl.classList.remove('oculto'); clearTimeout(t); t = setTimeout(function () { if (!menu.classList.contains('aberto')) ctl.classList.add('oculto'); }, 2500); }
+    document.addEventListener('mousemove', mostrar); mostrar();
+  }
+
+  if (chave) {
+    fetch(BASE + '/api/admin', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chave: chave, acao: 'verificar' }) })
+      .then(function (r) { if (r.ok) ligarControles(); else { localStorage.removeItem('ll_amapa_chave'); document.getElementById('leitura').hidden = false; } })
+      .catch(function () { ligarControles(); });
+  } else {
+    document.getElementById('leitura').hidden = false;
+  }
+  buscar();
+})();
+</script>
+</body>
+</html>
