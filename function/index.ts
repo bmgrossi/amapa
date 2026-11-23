@@ -184,8 +184,9 @@ async function apiAdmin(req: Request): Promise<Response> {
       await db('DELETE', `ll_voto?evento=eq.${EVENTO}&demo=is.true`);
       return json({ ok: true });
     case 'zerar-rodada':
+      // apaga os votos da rodada e abre outra, para nenhum celular guardar voto antigo
       await db('DELETE', `ll_voto?evento=eq.${EVENTO}&rodada=eq.${e.rodada}`);
-      return json(publico(await gravarEstado({ atual: 0, revelado: false })));
+      return json(publico(await gravarEstado({ rodada: e.rodada + 1, atual: 0, revelado: false })));
   }
   return json({ erro: 'ação desconhecida' }, 400);
 }
