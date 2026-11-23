@@ -36,7 +36,7 @@
   .pulso { display:inline-block; width:9px; height:9px; border-radius:50%; background:var(--rosa); margin-right:10px; animation:pulso 1.6s ease-in-out infinite; }
   @keyframes pulso { 0%,100% { opacity:.25 } 50% { opacity:1 } }
   @media (prefers-reduced-motion: reduce) { .pulso { animation:none; opacity:1 } }
-  footer { display:flex; justify-content:space-between; font-size:11px; letter-spacing:.14em; color:var(--muted); font-weight:500; }
+  footer { display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 16px; font-size:11px; letter-spacing:.14em; color:var(--muted); font-weight:500; }
   footer .ponto { color:var(--rosa); }
   .erro { color:#ffb3cf; font-size:14px; }
 </style>
