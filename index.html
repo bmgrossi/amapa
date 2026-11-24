@@ -101,7 +101,7 @@
         h += '<div class="veredito" style="font-size:40px">Sem resposta certa<span class="ponto">.</span></div>' +
           '<div class="acerto">' + (v ? 'Você marcou ' + v + ', ' + esc(alt(v).charAt(0).toLowerCase() + alt(v).slice(1)) + '.' : 'Você não votou nesta.') + '</div>';
       } else {
-        h += '<div class="veredito">' + e.resposta + '<span class="ponto">.</span></div>' +
+        h += '<div class="veredito" style="font-size:48px"><span class="e">Resposta </span>' + e.resposta + '<span class="ponto">.</span></div>' +
           '<div class="acerto">' + esc(alt(e.resposta)) + '</div>' +
           '<div class="acerto" style="font-weight:400;color:#eaeaea">' + (v ? (v === e.resposta ? 'Você acertou.' : 'Você marcou ' + v + '.') : 'Você não votou nesta.') + '</div>';
       }
