@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#08080a">
-<title>Lei ou lenda? · Liderança em Foco · Grupo Amapá</title>
+<title>Votação · Liderança em Foco · Grupo Amapá</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@200;300;400;500;600&display=swap">
@@ -19,9 +19,11 @@
   h1 .ponto { color:var(--rosa); }
   main { flex:1; display:flex; flex-direction:column; justify-content:center; gap:22px; padding:28px 0; }
   .rotulo { font-size:12px; letter-spacing:.16em; font-weight:500; color:var(--muted); }
-  .afirmacao { margin:0; font-size:27px; line-height:1.22; font-weight:300; letter-spacing:-.01em; }
+  .afirmacao { margin:0; font-size:23px; line-height:1.28; font-weight:300; letter-spacing:-.01em; }
   .botoes { display:flex; flex-direction:column; gap:12px; }
-  button.voto { font-family:inherit; font-size:22px; font-weight:600; letter-spacing:.14em; padding:22px 0; border-radius:999px; border:2px solid var(--fg); background:transparent; color:var(--fg); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background-color .15s, color .15s, border-color .15s; }
+  button.voto { font-family:inherit; display:flex; align-items:center; gap:16px; text-align:left; padding:16px 20px; border-radius:18px; border:2px solid var(--fg); background:transparent; color:var(--fg); cursor:pointer; -webkit-tap-highlight-color:transparent; transition:background-color .15s, color .15s, border-color .15s; }
+  button.voto .letra { font-size:24px; font-weight:600; width:22px; flex:none; }
+  button.voto .alt { font-size:17px; line-height:1.3; font-weight:500; }
   button.voto.escolhido { background:var(--fg); color:var(--bg); }
   button.voto:disabled { opacity:.35; }
   button.voto:active { transform:scale(.985); }
@@ -73,7 +75,7 @@
     var e = estado;
     if (!e) return;
     if (e.fase === 'espera') {
-      tela.innerHTML = '<p class="espera"><span class="pulso" aria-hidden="true"></span>Você está na sala. A primeira afirmação aparece aqui assim que ela for para a tela.</p>' +
+      tela.innerHTML = '<p class="espera"><span class="pulso" aria-hidden="true"></span>Você está na sala. A primeira pergunta aparece aqui assim que ela for para a tela.</p>' +
         '<p class="aviso">Deixe esta página aberta. Ela muda sozinha.</p>';
       return;
     }
@@ -83,20 +85,27 @@
       return;
     }
     var v = meuVoto(e.rodada, e.atual);
-    var h = '<div class="rotulo">AFIRMAÇÃO ' + e.atual + ' DE ' + e.total + '</div>' +
+    var h = '<div class="rotulo">PERGUNTA ' + e.atual + ' DE ' + e.total + ' · ' + esc(String(e.bloco || '').toUpperCase()) + '</div>' +
       '<p class="afirmacao">' + esc(e.texto) + '</p>';
+    var alts = e.alternativas || [];
     if (!e.revelado) {
-      h += '<div class="botoes">' +
-        '<button type="button" class="voto' + (v === 'lei' ? ' escolhido' : '') + '" data-v="lei" aria-pressed="' + (v === 'lei') + '"' + (enviando ? ' disabled' : '') + '>LEI</button>' +
-        '<button type="button" class="voto' + (v === 'lenda' ? ' escolhido' : '') + '" data-v="lenda" aria-pressed="' + (v === 'lenda') + '"' + (enviando ? ' disabled' : '') + '>LENDA</button>' +
-        '</div>' +
+      h += '<div class="botoes">' + alts.map(function (a) {
+        var on = v === a.letra;
+        return '<button type="button" class="voto' + (on ? ' escolhido' : '') + '" data-v="' + a.letra + '" aria-pressed="' + on + '"' + (enviando ? ' disabled' : '') + '>' +
+          '<span class="letra">' + a.letra + '</span><span class="alt">' + esc(a.texto) + '</span></button>';
+      }).join('') + '</div>' +
         '<div class="aviso">' + (msg ? '<span class="erro">' + esc(msg) + '</span>' : v ? 'Voto registrado. Dá para mudar até a resposta aparecer na tela.' : 'Toque na sua resposta.') + '</div>';
     } else {
-      var certo = v && v === e.resposta;
-      h += '<div class="veredito"><span class="e">É </span>' + (e.resposta === 'lei' ? 'lei' : 'lenda') + '<span class="ponto">.</span></div>' +
-        '<div class="acerto">' + (v ? (certo ? 'Você acertou.' : 'Você votou ' + v + '.') : 'Você não votou nesta.') + '</div>' +
-        '<p class="norma">' + esc(e.norma) + '</p>' +
-        '<div class="base">' + esc(e.base) + '</div>';
+      var alt = function (l) { for (var i = 0; i < alts.length; i++) if (alts[i].letra === l) return alts[i].texto; return ''; };
+      if (e.diagnostico) {
+        h += '<div class="veredito" style="font-size:40px">Sem resposta certa<span class="ponto">.</span></div>' +
+          '<div class="acerto">' + (v ? 'Você marcou ' + v + ', ' + esc(alt(v).charAt(0).toLowerCase() + alt(v).slice(1)) + '.' : 'Você não votou nesta.') + '</div>';
+      } else {
+        h += '<div class="veredito">' + e.resposta + '<span class="ponto">.</span></div>' +
+          '<div class="acerto">' + esc(alt(e.resposta)) + '</div>' +
+          '<div class="acerto" style="font-weight:400;color:#eaeaea">' + (v ? (v === e.resposta ? 'Você acertou.' : 'Você marcou ' + v + '.') : 'Você não votou nesta.') + '</div>';
+      }
+      h += '<p class="norma">' + esc(e.revela) + '</p>';
     }
     tela.innerHTML = h;
   }

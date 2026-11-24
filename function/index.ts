@@ -1,4 +1,4 @@
-// "Lei ou lenda?" — Liderança em Foco · Grupo Amapá — API de votação ao vivo
+// Votação ao vivo — Liderança em Foco · Grupo Amapá (slides 24 e 25 de "O turno é nosso")
 // Mesmo molde das palestras LGPD: o gateway do Supabase bloqueia HTML em *.supabase.co,
 // então as páginas moram no GitHub Pages e esta função é só API.
 // Tabelas ll_estado e ll_voto têm RLS ligada sem policies: só o service role acessa.
@@ -12,47 +12,67 @@ const EVENTO = 'amapa';
 const CHAVE_ADMIN = 'COLOQUE_A_CHAVE_AQUI';
 const SITE = 'https://bmgrossi.github.io/amapa';
 
-type Afirmacao = { texto: string; resposta: 'lei' | 'lenda'; norma: string; base: string };
+const LETRAS = ['A', 'B', 'C', 'D'] as const;
+type Letra = typeof LETRAS[number];
 
-const AFIRMACOES: Afirmacao[] = [
+// resposta: a letra certa, ou null nas perguntas de diagnóstico (sem resposta certa)
+type Pergunta = { bloco: string; texto: string; alternativas: string[]; resposta: Letra | null; revela: string };
+
+const BLOCO_CONTA = 'A conta ou a lei decide';
+const BLOCO_DIAG = 'Diagnóstico, sem resposta certa';
+
+const PERGUNTAS: Pergunta[] = [
   {
-    texto: 'Se o empregado concordou, a empresa está coberta.',
-    resposta: 'lenda',
-    norma: 'O acordo individual não afasta direito garantido em lei. Intervalo, limite de jornada e proteção não se negociam no corredor, e o termo assinado não transfere o dever.',
-    base: 'CLT, arts. 9º e 444',
+    bloco: BLOCO_CONTA,
+    texto: 'Uma equipe de 21 pessoas mantém a grade de hoje depois de dezembro. Cobrir essas horas com hora extra custa quanto, em salário, frente a contratar a 22ª pessoa?',
+    alternativas: ['Menos', 'O mesmo', 'Cerca de 30% a mais'],
+    resposta: 'C',
+    revela: 'Hora extra habitual é a forma mais cara de dimensionar uma equipe.',
   },
   {
-    texto: 'Quem começa o turno às 4h30 faz a primeira meia hora como hora comum.',
-    resposta: 'lenda',
-    norma: 'Das 22h às 5h a hora é noturna, com adicional e hora reduzida. A escala precisa mostrar a hora real de início.',
-    base: 'CLT, art. 73',
+    bloco: BLOCO_CONTA,
+    texto: 'O que reduz mais o risco trabalhista de uma área?',
+    alternativas: ['Zerar as horas extras', 'Limitá-las a duas por dia', 'Registrar todas as que forem feitas'],
+    resposta: 'C',
+    revela: 'A meta de zerar é a que mais empurra a hora para fora do registro.',
   },
   {
-    texto: 'A hora extra tem limite de duas por dia.',
-    resposta: 'lei',
-    norma: 'Até duas horas extras por dia, autorizadas antes e registradas, com adicional mínimo de 50%.',
-    base: 'CLT, art. 59; CF, art. 7º, XVI',
+    bloco: BLOCO_CONTA,
+    texto: 'Uma semana de pico está prevista para daqui a um mês. Qual instrumento a lei permite usar para absorvê-la sem pagar hora extra?',
+    alternativas: ['Reduzir o intervalo de refeição nesses dias', 'Compensar as horas dentro do mesmo mês', 'Trabalhar no dia de repouso, com folga combinada para depois'],
+    resposta: 'B',
+    revela: 'Planejar com antecedência é o que transforma hora extra em compensação.',
   },
   {
-    texto: 'Se o banco de horas não fecha, dá para ajustar as marcações no fim do mês.',
-    resposta: 'lenda',
-    norma: 'O ponto precisa retratar a jornada real. Marcação ajustada ou uniforme perde valor de prova, e a jornada alegada pelo empregado passa a prevalecer.',
-    base: 'CLT, art. 74, § 2º; Súmula 338 do TST',
+    bloco: BLOCO_CONTA,
+    texto: 'Para uma função com ruído acima do limite, o que pesa mais no custo ao longo de cinco anos?',
+    alternativas: ['Pagar o adicional de insalubridade', 'Neutralizar o agente, com equipamento, troca e fiscalização', 'São equivalentes'],
+    resposta: 'A',
+    revela: 'Prevenir custa uma fração de remunerar a exposição.',
   },
   {
-    texto: 'Recusar o EPI sem justificativa pode levar a advertência e até a justa causa.',
-    resposta: 'lei',
-    norma: 'A recusa injustificada ao uso do equipamento é ato faltoso. A gradação começa pela orientação e pela advertência registrada.',
-    base: 'CLT, art. 158, parágrafo único, b',
+    bloco: BLOCO_DIAG,
+    texto: 'Quando a hora extra se repete todo mês, ela é sintoma de quê?',
+    alternativas: ['Demanda acima da capacidade', 'Planejamento que chega tarde', 'Equipe subdimensionada', 'Hábito'],
+    resposta: null,
+    revela: 'O que se repete deixou de ser extraordinário e passou a ser a forma de operar.',
   },
   {
-    texto: 'Entregar o EPI e colher a assinatura encerra o dever da empresa.',
-    resposta: 'lenda',
-    norma: 'Além de fornecer, a empresa precisa orientar, substituir e fiscalizar o uso efetivo. Entregar não basta.',
-    base: 'NR-6; Súmula 289 do TST',
+    bloco: BLOCO_DIAG,
+    texto: 'Qual custo da hora extra habitual menos aparece na folha?',
+    alternativas: ['Os reflexos em repouso, férias, 13º e FGTS', 'A fadiga, com efeito em segurança e qualidade', 'A dependência da renda, que trava mudanças de escala'],
+    resposta: null,
+    revela: 'A sala costuma enxergar só o primeiro.',
+  },
+  {
+    bloco: BLOCO_DIAG,
+    texto: 'Que indicador a diretoria deveria ler ao lado das horas extras?',
+    alternativas: ['Absenteísmo', 'Ajustes manuais de ponto', 'Produtividade por hora', 'Acidentes e quase acidentes'],
+    resposta: null,
+    revela: 'Jornada, registro e segurança no mesmo painel.',
   },
 ];
-const TOTAL = AFIRMACOES.length;
+const TOTAL = PERGUNTAS.length;
 
 const CORS: Record<string, string> = {
   'Access-Control-Allow-Origin': '*',
@@ -95,22 +115,41 @@ async function gravarEstado(patch: Partial<Estado>): Promise<Estado> {
   return { rodada: r.rodada, atual: r.atual, revelado: r.revelado };
 }
 
+function letrasDe(p: Pergunta): Letra[] {
+  return LETRAS.slice(0, p.alternativas.length) as Letra[];
+}
+
 // fase: 'espera' (antes da 1ª), 'votacao', 'fim' (depois da última)
 function publico(e: Estado) {
   const fase = e.atual < 1 ? 'espera' : e.atual > TOTAL ? 'fim' : 'votacao';
   const out: Record<string, unknown> = { rodada: e.rodada, atual: e.atual, total: TOTAL, revelado: e.revelado, fase };
   if (fase === 'votacao') {
-    const a = AFIRMACOES[e.atual - 1];
-    out.texto = a.texto;
-    if (e.revelado) Object.assign(out, { resposta: a.resposta, norma: a.norma, base: a.base });
+    const p = PERGUNTAS[e.atual - 1];
+    Object.assign(out, {
+      bloco: p.bloco,
+      texto: p.texto,
+      alternativas: letrasDe(p).map((l, i) => ({ letra: l, texto: p.alternativas[i] })),
+      diagnostico: p.resposta === null,
+    });
+    if (e.revelado) Object.assign(out, { resposta: p.resposta, revela: p.revela });
   }
   return out;
 }
 
-async function contagem(rodada: number): Promise<{ lei: number; lenda: number }[]> {
+function zeros(p: Pergunta): Record<string, number> {
+  const o: Record<string, number> = {};
+  for (const l of letrasDe(p)) o[l] = 0;
+  return o;
+}
+
+async function contagem(rodada: number): Promise<Record<string, number>[]> {
   const rows = await db('GET', `ll_voto?evento=eq.${EVENTO}&rodada=eq.${rodada}&select=afirmacao,voto&limit=20000`);
-  const c = AFIRMACOES.map(() => ({ lei: 0, lenda: 0 }));
-  for (const r of rows) if (r.afirmacao >= 1 && r.afirmacao <= TOTAL) c[r.afirmacao - 1][r.voto as 'lei' | 'lenda']++;
+  const c = PERGUNTAS.map(zeros);
+  for (const r of rows) {
+    if (r.afirmacao < 1 || r.afirmacao > TOTAL) continue;
+    const alvo = c[r.afirmacao - 1];
+    if (r.voto in alvo) alvo[r.voto]++;
+  }
   return c;
 }
 
@@ -126,7 +165,11 @@ async function apiPainel(): Promise<Response> {
   const out: Record<string, unknown> = publico(e);
   if (e.atual >= 1 && e.atual <= TOTAL) out.votos = c[e.atual - 1];
   if (e.atual > TOTAL) {
-    out.resumo = AFIRMACOES.map((a, i) => ({ n: i + 1, texto: a.texto, resposta: a.resposta, ...c[i] }));
+    out.resumo = PERGUNTAS.map((p, i) => ({
+      n: i + 1, bloco: p.bloco, texto: p.texto, resposta: p.resposta,
+      alternativas: letrasDe(p).map((l, j) => ({ letra: l, texto: p.alternativas[j] })),
+      votos: c[i],
+    }));
   }
   return json(out);
 }
@@ -135,12 +178,14 @@ const DISP_RE = /^[a-zA-Z0-9-]{8,64}$/;
 
 async function apiVoto(req: Request): Promise<Response> {
   const b = await req.json().catch(() => null);
-  if (!b || !DISP_RE.test(String(b.dispositivo)) || (b.voto !== 'lei' && b.voto !== 'lenda')) return json({ erro: 'voto inválido' }, 400);
+  if (!b || !DISP_RE.test(String(b.dispositivo))) return json({ erro: 'voto inválido' }, 400);
   const e = await lerEstado();
   if (Number(b.rodada) !== e.rodada || Number(b.n) !== e.atual || e.atual < 1 || e.atual > TOTAL) {
-    return json({ erro: 'esta afirmação já não está em votação', estado: publico(e) }, 409);
+    return json({ erro: 'esta pergunta já não está em votação', estado: publico(e) }, 409);
   }
-  if (e.revelado) return json({ erro: 'a votação desta afirmação foi encerrada', estado: publico(e) }, 409);
+  if (e.revelado) return json({ erro: 'a votação desta pergunta foi encerrada', estado: publico(e) }, 409);
+  const p = PERGUNTAS[e.atual - 1];
+  if (!(letrasDe(p) as string[]).includes(b.voto)) return json({ erro: 'alternativa inválida' }, 400);
   await db(
     'POST',
     'll_voto?on_conflict=evento,rodada,afirmacao,dispositivo',
@@ -168,13 +213,14 @@ async function apiAdmin(req: Request): Promise<Response> {
     case 'nova-rodada':
       return json(publico(await gravarEstado({ rodada: e.rodada + 1, atual: 0, revelado: false })));
     case 'semear': {
-      // votos de teste na afirmação atual, marcados como demo
-      if (e.atual < 1 || e.atual > TOTAL) return json({ erro: 'abra uma afirmação antes' }, 400);
+      // votos de teste na pergunta atual, marcados como demo
+      if (e.atual < 1 || e.atual > TOTAL) return json({ erro: 'abra uma pergunta antes' }, 400);
+      const ls = letrasDe(PERGUNTAS[e.atual - 1]);
       const linhas = [];
       for (let k = 0; k < 25; k++) {
         linhas.push({
           evento: EVENTO, rodada: e.rodada, afirmacao: e.atual, demo: true,
-          dispositivo: 'demo-' + crypto.randomUUID(), voto: Math.random() < 0.55 ? 'lei' : 'lenda',
+          dispositivo: 'demo-' + crypto.randomUUID(), voto: ls[Math.floor(Math.random() * ls.length)],
         });
       }
       await db('POST', 'll_voto', linhas);
@@ -194,27 +240,28 @@ async function apiAdmin(req: Request): Promise<Response> {
 async function apiExport(url: URL): Promise<Response> {
   if (url.searchParams.get('chave') !== CHAVE_ADMIN) return json({ erro: 'chave inválida' }, 401);
   const rows = await db('GET', `ll_voto?evento=eq.${EVENTO}&demo=is.false&select=rodada,afirmacao,voto&limit=50000`);
-  const m = new Map<string, { lei: number; lenda: number }>();
+  const m = new Map<string, Record<string, number>>();
   for (const r of rows) {
+    if (r.afirmacao < 1 || r.afirmacao > TOTAL) continue;
     const k = `${r.rodada}|${r.afirmacao}`;
-    const v = m.get(k) ?? { lei: 0, lenda: 0 };
-    v[r.voto as 'lei' | 'lenda']++;
+    const v = m.get(k) ?? zeros(PERGUNTAS[r.afirmacao - 1]);
+    if (r.voto in v) v[r.voto]++;
     m.set(k, v);
   }
   const esc = (v: unknown) => `"${String(v ?? '').replace(/"/g, '""')}"`;
-  const linhas = [['rodada', 'afirmacao', 'texto', 'resposta', 'votos_lei', 'votos_lenda', 'acerto_pct'].join(';')];
+  const linhas = [['rodada', 'pergunta', 'bloco', 'texto', 'resposta', 'A', 'B', 'C', 'D', 'total', 'acerto_pct'].join(';')];
   for (const k of [...m.keys()].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }))) {
     const [rodada, n] = k.split('|').map(Number);
-    const a = AFIRMACOES[n - 1];
+    const p = PERGUNTAS[n - 1];
     const v = m.get(k)!;
-    const tot = v.lei + v.lenda;
-    const pct = tot ? Math.round((100 * v[a.resposta]) / tot) : 0;
-    linhas.push([rodada, n, esc(a.texto), a.resposta, v.lei, v.lenda, pct].join(';'));
+    const tot = Object.values(v).reduce((s, x) => s + x, 0);
+    const pct = p.resposta && tot ? Math.round((100 * (v[p.resposta] ?? 0)) / tot) : '';
+    linhas.push([rodada, n, esc(p.bloco), esc(p.texto), p.resposta ?? 'sem resposta certa', v.A ?? '', v.B ?? '', v.C ?? '', v.D ?? '', tot, pct].join(';'));
   }
   return new Response('﻿' + linhas.join('\r\n'), {
     headers: {
       'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="lei-ou-lenda-amapa.csv"',
+      'Content-Disposition': 'attachment; filename="votacao-amapa.csv"',
       ...CORS,
     },
   });
